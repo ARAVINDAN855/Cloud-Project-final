@@ -1394,7 +1394,7 @@ const [loadingSummary, setLoadingSummary] = useState(false);
         },
         body: JSON.stringify({
           userId: "123",
-          sourceLanguage,
+          sourceLanguage:"auto",
           targetLanguage,
           text,
         }),
@@ -1679,9 +1679,9 @@ const speakText = (text, lang) => {
         <div style={styles.container}>
           <button style={styles.buttonSecondary} onClick={() => setPage("home")}>⬅ Back</button>
 <div style={styles.selectRow}>
-          <select style={styles.select} value={sourceLanguage} onChange={(e) => setSourceLanguage(e.target.value)}>
+          {/*<select style={styles.select} value={sourceLanguage} onChange={(e) => setSourceLanguage(e.target.value)}>
             {languageOptions}
-          </select>
+          </select>*/}
 
           <select style={styles.select} value={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)}>
             {languageOptions}
