@@ -1465,6 +1465,8 @@ const handleSummarize = async () => {
   try {
     setLoadingSummary(true);
 
+    console.log("Sending fileKey to backend:", outputFileKey);
+
     const res = await fetch(`${API_BASE}/summarize`, {
       method: "POST",
       headers: {
@@ -1472,23 +1474,44 @@ const handleSummarize = async () => {
         "x-api-key": API_KEY,
       },
       body: JSON.stringify({
-        fileKey: outputFileKey, // ✅ now works
+        fileKey: outputFileKey,
       }),
     });
 
+    console.log("Response status:", res.status);
+
     const data = await res.json();
+    console.log("Summarize response:", data);
 
-    setSummary(
-      data.summary ||
-      data.result ||
-      data.output ||
-      "No summary generated"
-    );
+    let parsed = data;
 
+    // if backend returned nested Lambda response
+    if (data.body) {
+      parsed = JSON.parse(data.body);
+      console.log("Parsed inner body:", parsed);
+    }
+
+    if (parsed.error) {
+      console.error("Summary backend error:", parsed.error);
+      setToast(parsed.error);
+      setLoadingSummary(false);
+      return;
+    }
+
+    const finalSummary =
+      parsed.summary ||
+      parsed.result ||
+      parsed.output ||
+      "No summary generated";
+
+    console.log("FINAL SUMMARY:", finalSummary);
+    console.log("SUMMARY PREVIEW (first 200 chars):", finalSummary.substring(0, 200));
+
+    setSummary(finalSummary);
     setShowSummary(true);
 
   } catch (err) {
-    console.log(err);
+    console.error("Summarization error:", err);
     setToast("Summarization failed ❌");
   }
 
@@ -1543,6 +1566,7 @@ const speakText = (text, lang) => {
 };
 
   // 🔹 FILE UPLOAD
+  {/*
   const handleFileUpload = async () => {
   if (!file) {
     setToast("Please select a file ⚠️");
@@ -1588,6 +1612,63 @@ const speakText = (text, lang) => {
     }
 
     setLoadingUpload(false); // ✅ STOP loading HERE
+  };
+
+  reader.readAsDataURL(file);
+};*/}
+const handleFileUpload = async () => {
+  if (!file) {
+    setToast("Please select a file ⚠️");
+    setTimeout(() => setToast(""), 2000);
+    return;
+  }
+
+  const reader = new FileReader();
+
+  setLoadingUpload(true);
+
+  reader.onload = async () => {
+    try {
+      const base64 = reader.result.split(",")[1];
+
+      console.log("UPLOADING FILE:", file.name);
+      console.log("TARGET LANGUAGE:", targetLanguage);
+
+      const res = await fetch(`${API_BASE}/upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+        body: JSON.stringify({
+          fileContent: base64,
+          fileName: file.name,
+          sourceLanguage: "auto",
+          targetLanguage,
+        }),
+      });
+
+      console.log("UPLOAD RESPONSE STATUS:", res.status);
+
+      const data = await res.json();
+
+      console.log("UPLOAD RESPONSE:", data);
+      console.log("TRANSLATED TEXT FROM UPLOAD:", data.translatedText?.substring(0, 300));
+      console.log("OUTPUT FILE KEY STORED:", data.outputFile);
+
+      setTranslatedDocText(data.translatedText);
+      setOutputFileKey(data.outputFile);
+
+      setToast("File translated successfully ✅");
+      setTimeout(() => setToast(""), 2000);
+
+    } catch (error) {
+      console.log("UPLOAD ERROR:", error);
+      setToast("Upload failed ❌");
+      setTimeout(() => setToast(""), 2000);
+    }
+
+    setLoadingUpload(false);
   };
 
   reader.readAsDataURL(file);
