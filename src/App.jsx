@@ -1371,10 +1371,12 @@ const [loadingSummary, setLoadingSummary] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [file, setFile] = useState(null);
 
-  const API_BASE =
+  /*const API_BASE =
     "https://9d1yi8itd1.execute-api.ap-south-1.amazonaws.com/prodx";
 
-  const API_KEY = "JAd7QAr9Fq7j402D2iu1u9tZtv02KraeKCnFroQ7";
+  const API_KEY = "JAd7QAr9Fq7j402D2iu1u9tZtv02KraeKCnFroQ7";*/
+  const API_BASE = import.meta.env.VITE_API_BASE;
+  const API_KEY = import.meta.env.VITE_API_KEY;
 
   // 🔹 TEXT TRANSLATE
   const handleTranslate = async () => {
