@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Document, Packer, Paragraph } from "docx";
 import { PDFDocument } from "pdf-lib";
 import tamilFont from "./assets/NotoSansTamil-Regular.ttf";
+import hindiFont from "./assets/NotoSansDevanagari-Regular.ttf"; 
+import arabicFont from "./assets/NotoSansArabic-Regular.ttf";
 import normalFont from "./assets/NotoSans-Regular.ttf";
 import fontkit from "@pdf-lib/fontkit";
 
@@ -298,7 +300,19 @@ function App() {
   // 🔹 FONT
   const getFont = async (pdfDoc, text) => {
     const isTamil = /[\u0B80-\u0BFF]/.test(text);
-    const fontUrl = isTamil ? tamilFont : normalFont;
+    const isHindi = /[\u0900-\u097F]/.test(text); 
+    const isArabic = /[\u0600-\u06FF]/.test(text);
+
+    let fontUrl = normalFont; // Default for English/Spanish
+
+    if (isTamil) {
+      fontUrl = tamilFont;
+    } else if (isHindi) {
+      fontUrl = hindiFont; 
+    } else if (isArabic) {
+      fontUrl = arabicFont; 
+    }
+
     const fontBytes = await fetch(fontUrl).then((r) => r.arrayBuffer());
     return pdfDoc.embedFont(fontBytes, { subset: false });
   };
@@ -337,16 +351,21 @@ function App() {
   };
 
   const downloadDOCX = async () => {
+    // This splits the giant text block into separate paragraphs!
+    const paragraphs = translatedDocText
+      .split("\n")
+      .filter((line) => line.trim() !== "")
+      .map((line) => new Paragraph({ text: line, spacing: { after: 200 } })); 
+
     const doc = new Document({
       sections: [
         {
-          children: [new Paragraph(translatedDocText)],
+          children: paragraphs, 
         },
       ],
     });
 
     const blob = await Packer.toBlob(doc);
-
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "translated.docx";
@@ -628,27 +647,61 @@ function App() {
               </button>
             </div>
 
+            {/* 🔹 LIVE TRANSLATION PREVIEW BOX 🔹 */}
             {translatedDocText && (
-              <div style={styles.downloadCard}>
-                <div>
-                  <h3 style={styles.sectionTitle}>Download Translated File</h3>
-                  <p style={styles.sectionSubtext}>
-                    Export in your preferred format
-                  </p>
+              <>
+                <div style={{
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "20px",
+                  padding: "20px",
+                  marginTop: "20px",
+                  marginBottom: "20px",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.02)"
+                }}>
+                  <h3 style={styles.sectionTitle}>👁️ Live Translation Preview</h3>
+                  <textarea
+                    readOnly
+                    value={translatedDocText}
+                    rows={8}
+                    style={{
+                      width: "100%",
+                      padding: "15px",
+                      borderRadius: "12px",
+                      border: "1px solid #cbd5e1",
+                      backgroundColor: "#f8fafc",
+                      marginTop: "10px",
+                      fontSize: "14px",
+                      lineHeight: "1.6",
+                      resize: "vertical",
+                      outline: "none",
+                      color: "#334155"
+                    }}
+                  />
                 </div>
 
-                <div style={styles.downloadRow}>
-                  <button style={styles.downloadButton} onClick={downloadTXT}>
-                    TXT
-                  </button>
-                  <button style={styles.downloadButton} onClick={downloadPDF}>
-                    PDF
-                  </button>
-                  <button style={styles.downloadButton} onClick={downloadDOCX}>
-                    DOCX
-                  </button>
+                {/* 🔹 DOWNLOAD OPTIONS (Only shows after translation) 🔹 */}
+                <div style={styles.downloadCard}>
+                  <div>
+                    <h3 style={styles.sectionTitle}>Download Translated File</h3>
+                    <p style={styles.sectionSubtext}>
+                      Export in your preferred format
+                    </p>
+                  </div>
+
+                  <div style={styles.downloadRow}>
+                    <button style={styles.downloadButton} onClick={downloadTXT}>
+                      TXT
+                    </button>
+                    <button style={styles.downloadButton} onClick={downloadPDF}>
+                      PDF
+                    </button>
+                    <button style={styles.downloadButton} onClick={downloadDOCX}>
+                      DOCX
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
